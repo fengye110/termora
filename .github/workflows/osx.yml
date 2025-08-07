@@ -81,6 +81,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-gradle-
 
+      - name: Install create-dmg
+        shell: bash
+        run: brew install create-dmg
+
       - name: Compile
         shell: bash
         run: ./gradlew :check-license && ./gradlew classes -x test
@@ -92,13 +96,6 @@ jobs:
       - name: Package
         shell: bash
         run: ./gradlew :jpackage && ./gradlew :dist
-
-      - name: Upload zip artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: termora-osx-zip-${{ runner.arch }}
-          path: |
-            build/distributions/*.zip
 
       - name: Upload dmg artifact
         uses: actions/upload-artifact@v4
