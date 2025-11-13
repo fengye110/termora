@@ -236,7 +236,7 @@ class TerminalTabbed(
             if (tab is HostTerminalTab) {
                 actionManager
                     .getAction(OpenHostAction.OPEN_HOST)
-                    .actionPerformed(OpenHostActionEvent(this, tab.host, evt))
+                    .actionPerformed(OpenHostActionEvent(this, tab.host, evt, tabIndex + 1))
             }
         }
 
