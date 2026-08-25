@@ -256,7 +256,9 @@ internal class MarketplaceManager private constructor() {
                 // load plugins
                 delay(1.seconds)
                 while (isActive) {
-                    runCatching { getInstance().refreshPlugins() }
+                    if (PrivacySettings.pluginMarketplaceEnabled) {
+                        runCatching { getInstance().refreshPlugins() }
+                    }
                     // 每小时刷新一下
                     delay(1.hours)
                 }

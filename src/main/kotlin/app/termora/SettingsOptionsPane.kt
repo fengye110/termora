@@ -90,6 +90,7 @@ class SettingsOptionsPane : OptionsPane() {
 
         options.add(AppearanceOption())
         options.add(SecurityOption())
+        options.add(PrivacyOption())
         options.add(TerminalOption())
         options.add(KeyShortcutsOption())
         options.add(SFTPOption())
@@ -411,6 +412,39 @@ class SettingsOptionsPane : OptionsPane() {
         }
 
 
+    }
+
+    private inner class PrivacyOption : JPanel(BorderLayout()), Option {
+        private val feedbackCheckBox = JCheckBox(I18n.getString("termora.settings.privacy.feedback"))
+        private val updateCheckCheckBox = JCheckBox(I18n.getString("termora.settings.privacy.update-check"))
+        private val pluginMarketplaceCheckBox = JCheckBox(I18n.getString("termora.settings.privacy.plugin-marketplace"))
+
+        init {
+            border = BorderFactory.createEmptyBorder(16, 16, 16, 16)
+            feedbackCheckBox.toolTipText = I18n.getString("termora.settings.privacy.feedback.description")
+            updateCheckCheckBox.toolTipText = I18n.getString("termora.settings.privacy.update-check.description")
+            pluginMarketplaceCheckBox.toolTipText = I18n.getString("termora.settings.privacy.plugin-marketplace.description")
+
+            feedbackCheckBox.isSelected = PrivacySettings.feedbackEnabled
+            updateCheckCheckBox.isSelected = PrivacySettings.updateCheckEnabled
+            pluginMarketplaceCheckBox.isSelected = PrivacySettings.pluginMarketplaceEnabled
+
+            feedbackCheckBox.addActionListener { PrivacySettings.feedbackEnabled = feedbackCheckBox.isSelected }
+            updateCheckCheckBox.addActionListener { PrivacySettings.updateCheckEnabled = updateCheckCheckBox.isSelected }
+            pluginMarketplaceCheckBox.addActionListener {
+                PrivacySettings.pluginMarketplaceEnabled = pluginMarketplaceCheckBox.isSelected
+            }
+
+            val panel = JPanel(FormLayout("default:grow", "pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref"))
+            panel.add(feedbackCheckBox, "1, 1")
+            panel.add(updateCheckCheckBox, "1, 3")
+            panel.add(pluginMarketplaceCheckBox, "1, 5")
+            add(panel, BorderLayout.NORTH)
+        }
+
+        override fun getIcon(isSelected: Boolean) = Icons.locked
+        override fun getTitle(): String = I18n.getString("termora.settings.privacy")
+        override fun getJComponent(): JComponent = this
     }
 
     private inner class TerminalOption : JPanel(BorderLayout()), Option {

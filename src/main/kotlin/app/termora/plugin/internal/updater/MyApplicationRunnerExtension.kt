@@ -36,6 +36,7 @@ internal class MyApplicationRunnerExtension private constructor() : ApplicationR
 
     private suspend fun scheduleUpdate() {
         if (disabledUpdater) return
+        if (PrivacySettings.updateCheckEnabled.not()) return
 
         val latestVersion = updaterManager.fetchLatestVersion()
         if (latestVersion.isSelf) {

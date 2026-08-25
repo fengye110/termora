@@ -399,7 +399,7 @@ class ApplicationRunner {
      * 统计 https://mixpanel.com
      */
     private fun enableAnalytics() {
-        if (Application.isUnknownVersion()) {
+        if (PrivacySettings.feedbackEnabled.not()) {
             return
         }
         MixpanelService.getInstance().push("launch")
