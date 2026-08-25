@@ -353,7 +353,7 @@ class ApplicationRunner {
                 val result = JOptionPane.showConfirmDialog(
                     null,
                     password,
-                    "Enter master password",
+                    I18n.getString("termora.settings.security.enter-password"),
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE,
                 )
@@ -365,7 +365,7 @@ class ApplicationRunner {
                     UnlockResult.UNSUPPORTED_FORMAT -> {
                         JOptionPane.showMessageDialog(
                             null,
-                            "Database protection format is unsupported.",
+                            I18n.getString("termora.settings.security.unsupported-format"),
                             I18n.getString("termora.title"),
                             JOptionPane.ERROR_MESSAGE,
                         )
@@ -374,7 +374,7 @@ class ApplicationRunner {
                     UnlockResult.WRONG_PASSWORD_OR_CORRUPT -> {
                     JOptionPane.showMessageDialog(
                         null,
-                        "Master password is incorrect or key data is corrupted.",
+                        I18n.getString("termora.settings.security.incorrect-password"),
                         I18n.getString("termora.title"),
                         JOptionPane.ERROR_MESSAGE,
                     )
@@ -388,7 +388,7 @@ class ApplicationRunner {
                 log.error(e.message, e)
             }
             JOptionPane.showMessageDialog(
-                null, "Unable to open database",
+                null, I18n.getString("termora.settings.security.open-database-failed"),
                 I18n.getString("termora.title"), JOptionPane.ERROR_MESSAGE
             )
             exitProcess(1)
