@@ -94,6 +94,19 @@ Termora 使用 [**Kotlin/JVM**](https://kotlinlang.org/) 开发，支持（正�
 
 - 本地运行：`./gradlew :run`
 
+### Windows 一键发布
+
+在 Windows PowerShell 中执行以下命令，即可自动安装缺失的 Git for Windows、Inno Setup 和 Docker Desktop，下载 JBR 25，并生成 Windows 与 Linux 软件包：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\build-release.ps1
+```
+
+- Windows 安装程序和 zip 包输出到 `artifacts\windows`。
+- Linux `deb` 包通过 Docker 构建，输出到 `artifacts\linux`。
+- Docker Desktop 首次安装后需要手动完成初始化并启动，再重新执行脚本。
+- 仅安装构建环境可加 `-InstallOnly`；仅构建 Windows 可加 `-SkipLinux`。
+
 
 ## 📄 授权协议
 

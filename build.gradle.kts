@@ -206,6 +206,9 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+    if (providers.gradleProperty("skipContainerTests").isPresent) {
+        exclude("**/SFTPTest.class")
+    }
 }
 
 @Suppress("CascadeIf")

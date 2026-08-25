@@ -1,5 +1,7 @@
 .gradle
 build/
+artifacts/
+.toolchains/
 data/
 dist/
 certs/
@@ -44,3 +46,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+.codegraph
