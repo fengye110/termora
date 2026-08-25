@@ -89,6 +89,7 @@ class SettingsOptionsPane : OptionsPane() {
         val options = mutableListOf<Option>()
 
         options.add(AppearanceOption())
+        options.add(SecurityOption())
         options.add(TerminalOption())
         options.add(KeyShortcutsOption())
         options.add(SFTPOption())
