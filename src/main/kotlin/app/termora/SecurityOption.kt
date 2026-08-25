@@ -15,15 +15,15 @@ import javax.swing.JPasswordField
 internal class SecurityOption : JPanel(BorderLayout()), OptionsPane.Option {
     private val secret = DatabaseSecret.getInstance()
     private val status = JLabel()
-    private val enable = JButton("Enable Master Password Protection")
-    private val change = JButton("Change Master Password")
-    private val disable = JButton("Disable Master Password Protection")
+    private val enable = JButton(I18n.getString("termora.settings.security.enable"))
+    private val change = JButton(I18n.getString("termora.settings.security.change"))
+    private val disable = JButton(I18n.getString("termora.settings.security.disable"))
 
     init {
         border = BorderFactory.createEmptyBorder(16, 16, 16, 16)
         val content = JPanel(BorderLayout(0, 12))
         content.add(status, BorderLayout.NORTH)
-        content.add(JLabel("If the master password is lost, encrypted local data cannot be recovered."), BorderLayout.CENTER)
+        content.add(JLabel(I18n.getString("termora.settings.security.warning")), BorderLayout.CENTER)
         val buttons = JPanel(GridLayout(0, 1, 0, 8))
         buttons.add(enable)
         buttons.add(change)
@@ -37,23 +37,23 @@ internal class SecurityOption : JPanel(BorderLayout()), OptionsPane.Option {
     }
 
     override fun getIcon(isSelected: Boolean) = if (secret.isProtectionEnabled()) Icons.locked else Icons.unlocked
-    override fun getTitle(): String = "Security / Master Password"
+    override fun getTitle(): String = I18n.getString("termora.settings.security")
     override fun getJComponent(): JComponent = this
 
     private fun enableProtection() {
-        val password = requestPassword("Set master password") ?: return
-        val confirmation = requestPassword("Confirm master password")
+        val password = requestPassword(I18n.getString("termora.settings.security.set-password")) ?: return
+        val confirmation = requestPassword(I18n.getString("termora.settings.security.confirm-password"))
         try {
             if (password.size < 1) {
-                showError("Master password must contain at least 1 characters.")
+                showError(I18n.getString("termora.settings.security.password-too-short"))
             } else if (confirmation == null || !constantTimeEquals(password, confirmation)) {
-                showError("Master passwords do not match.")
+                showError(I18n.getString("termora.settings.security.password-mismatch"))
             } else {
                 secret.enable(password)
                 refresh()
             }
         } catch (e: Exception) {
-            showError("Unable to enable master password protection.")
+            showError(I18n.getString("termora.settings.security.enable-failed"))
         } finally {
             password.fill('\u0000')
             confirmation?.fill('\u0000')
@@ -61,18 +61,18 @@ internal class SecurityOption : JPanel(BorderLayout()), OptionsPane.Option {
     }
 
     private fun changePassword() {
-        val old = requestPassword("Current master password") ?: return
-        val password = requestPassword("New master password")
-        val confirmation = requestPassword("Confirm new master password")
+        val old = requestPassword(I18n.getString("termora.settings.security.current-password")) ?: return
+        val password = requestPassword(I18n.getString("termora.settings.security.new-password"))
+        val confirmation = requestPassword(I18n.getString("termora.settings.security.confirm-new-password"))
         try {
             if (password == null || password.size < 1 || confirmation == null || !constantTimeEquals(password, confirmation)) {
-                showError("New master passwords must match and contain at least 1 characters.")
+                showError(I18n.getString("termora.settings.security.new-password-invalid"))
             } else {
                 secret.change(old, password)
                 refresh()
             }
         } catch (_: Exception) {
-            showError("Current master password is incorrect or key data is corrupted.")
+            showError(I18n.getString("termora.settings.security.incorrect-or-corrupt"))
         } finally {
             old.fill('\u0000')
             password?.fill('\u0000')
@@ -81,13 +81,19 @@ internal class SecurityOption : JPanel(BorderLayout()), OptionsPane.Option {
     }
 
     private fun disableProtection() {
-        if (JOptionPane.showConfirmDialog(this, "The database key will be stored unencrypted. Continue?", "Disable protection", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return
-        val password = requestPassword("Current master password") ?: return
+        if (JOptionPane.showConfirmDialog(
+                this,
+                I18n.getString("termora.settings.security.disable-warning"),
+                I18n.getString("termora.settings.security.disable-title"),
+                JOptionPane.YES_NO_OPTION
+            ) != JOptionPane.YES_OPTION
+        ) return
+        val password = requestPassword(I18n.getString("termora.settings.security.current-password")) ?: return
         try {
             secret.disable(password)
             refresh()
         } catch (_: Exception) {
-            showError("Current master password is incorrect or key data is corrupted.")
+            showError(I18n.getString("termora.settings.security.incorrect-or-corrupt"))
         } finally {
             password.fill('\u0000')
         }
@@ -100,14 +106,18 @@ internal class SecurityOption : JPanel(BorderLayout()), OptionsPane.Option {
 
     private fun refresh() {
         val protected = secret.isProtectionEnabled()
-        status.text = if (protected) "Master Password protection is enabled." else "Master Password protection is not enabled."
+        status.text = if (protected) {
+            I18n.getString("termora.settings.security.status-enabled")
+        } else {
+            I18n.getString("termora.settings.security.status-disabled")
+        }
         enable.isEnabled = !protected
         change.isEnabled = protected
         disable.isEnabled = protected
     }
 
     private fun showError(message: String) {
-        JOptionPane.showMessageDialog(this, message, "Security", JOptionPane.ERROR_MESSAGE)
+        JOptionPane.showMessageDialog(this, message, I18n.getString("termora.settings.security"), JOptionPane.ERROR_MESSAGE)
     }
 
     private fun constantTimeEquals(first: CharArray, second: CharArray): Boolean {
