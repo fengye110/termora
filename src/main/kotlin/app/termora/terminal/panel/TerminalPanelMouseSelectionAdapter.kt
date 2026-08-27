@@ -12,7 +12,6 @@ import java.awt.Point
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.text.BreakIterator
 import javax.swing.SwingUtilities
 import kotlin.math.abs
 
@@ -27,7 +26,6 @@ class TerminalPanelMouseSelectionAdapter(private val terminalPanel: TerminalPane
         ) != MouseMode.MOUSE_REPORTING_NONE
     private val isSelectCopy get() = terminalModel.getData(TerminalPanel.SelectCopy, false)
     private val selectionModel get() = terminal.getSelectionModel()
-    private val wordBreakIterator = BreakIterator.getWordInstance()
     private val rightClickMode get() = DatabaseManager.getInstance().terminal.rightClick
 
     companion object {
@@ -313,45 +311,52 @@ class TerminalPanelMouseSelectionAdapter(private val terminalPanel: TerminalPane
             triggerCopyAction()
         }
     }
+}
 
-    /**
-     * @return Triple<StartOffset, Text, EndOffset>
-     */
-    private fun convertWords(text: String): List<Triple<Int, String, Int>> {
-        val words = mutableListOf<Triple<Int, String, Int>>()
-        wordBreakIterator.setText(text)
-
-        var doubleWidthCharCount = 0
-        var start = wordBreakIterator.first()
-        var end = wordBreakIterator.next()
-        while (end != BreakIterator.DONE) {
-
-            val word = text.substring(start, end)
-
-            // 因为中文字符占用两个字宽，但是 text 是不包含 ZeroWidth 字符的，所以这里要加上
-            val first = doubleWidthCharCount == 0
-            val widthDiff = getStringWidth(word) - word.length
-
-            words.add(
-                Triple(
-                    start + (if (first) 0 else doubleWidthCharCount),
-                    word,
-                    end + (doubleWidthCharCount + widthDiff)
-                )
-            )
-
-            doubleWidthCharCount += getStringWidth(word) - word.length
-
-            start = end
-            end = wordBreakIterator.next()
+/**
+ * 按空白字符切分文本，返回每个连续非空白字符段（“单词”）及其在行中的列偏移。
+ *
+ * 与按字典规则切分（如 BreakIterator 会把 /、.、- 等作为词边界）不同，
+ * 这里把所有非空白字符都视为单词的一部分，
+ * 这样双击 /root/zai-org/glm-5.3-flash-sm120 这类路径时可以选中完整的一整段。
+ *
+ * @return Triple<StartOffset, Text, EndOffset>
+ */
+internal fun convertWords(text: String): List<Triple<Int, String, Int>> {
+    val words = mutableListOf<Triple<Int, String, Int>>()
+    // 中文字符占两个字宽，但 text 中不包含 ZeroWidth 字符，因此需要累加宽度补偿
+    var doubleWidthCharCount = 0
+    var i = 0
+    while (i < text.length) {
+        val c = text[i]
+        // 跳过空白字符
+        if (c.isWhitespace()) {
+            i++
+            continue
         }
 
-        return words
+        val start = i
+        while (i < text.length && !text[i].isWhitespace()) {
+            i++
+        }
+
+        val word = text.substring(start, i)
+        val widthDiff = getStringWidth(word) - word.length
+        words.add(
+            Triple(
+                start + doubleWidthCharCount,
+                word,
+                i + doubleWidthCharCount + widthDiff
+            )
+        )
+        doubleWidthCharCount += widthDiff
     }
 
-    private fun getStringWidth(text: String): Int {
-        var count = 0
-        text.toCharArray().forEach { count += mk_wcwidth(it) }
-        return count
-    }
+    return words
+}
+
+internal fun getStringWidth(text: String): Int {
+    var count = 0
+    text.toCharArray().forEach { count += mk_wcwidth(it) }
+    return count
 }
