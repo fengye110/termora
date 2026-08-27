@@ -11,6 +11,7 @@ import app.termora.findeverywhere.FindEverywhereProviderExtension
 import app.termora.findeverywhere.FindEverywhereResult
 import app.termora.plugin.ExtensionManager
 import app.termora.plugin.internal.extension.DynamicExtensionHandler
+import app.termora.plugin.internal.ssh.CloneSessionTerminalTabbedContextMenuExtension
 import app.termora.terminal.DataKey
 import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.extras.components.FlatPopupMenu
@@ -91,6 +92,20 @@ class TerminalTabbed(
         // 右键菜单
         tabbedPane.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
+
+                // 双击克隆会话
+                if (SwingUtilities.isLeftMouseButton(e) && e.clickCount % 2 == 0) {
+                    val index = tabbedPane.indexAtLocation(e.x, e.y)
+                    if (index >= 0) {
+                        CloneSessionTerminalTabbedContextMenuExtension.cloneSession(
+                            windowScope,
+                            tabs[index],
+                            this@TerminalTabbed
+                        )
+                    }
+                    return
+                }
+
                 if (!SwingUtilities.isRightMouseButton(e)) {
                     return
                 }
