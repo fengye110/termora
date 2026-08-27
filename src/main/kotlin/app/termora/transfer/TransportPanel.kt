@@ -39,6 +39,7 @@ import java.io.File
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributeView
 import java.nio.file.attribute.FileOwnerAttributeView
@@ -703,11 +704,18 @@ internal open class TransportPanel(
             if (workdir != null) registerSelectRow(workdir.name)
         }
 
-        // Windows 比较特殊，显示盘符页
-        if (path.fileSystem.isWindowsFileSystem() && path.pathString == path.fileSystem.separator) {
-            navigator.navigateTo(path.pathString)
+        // 符号链接目录：进入链接目标（跟随链接）
+        val destination = if (attributes.isSymbolicLink) {
+            resolveSymbolicLink(path)?.absolutePathString() ?: path.absolutePathString()
         } else {
-            navigator.navigateTo(path.absolutePathString())
+            path.absolutePathString()
+        }
+
+        // Windows 比较特殊，显示盘符页
+        if (path.fileSystem.isWindowsFileSystem() && destination == path.fileSystem.separator) {
+            navigator.navigateTo(destination)
+        } else {
+            navigator.navigateTo(destination)
         }
     }
 
@@ -873,13 +881,25 @@ internal open class TransportPanel(
         if (path is WithFileAttributes) {
             val attributes = path.attributes
             if (attributes != null) {
+                // 符号链接需要解析其指向的类型（跟随链接）：
+                // 目录符号链接 → 作为目录（双击进入），文件符号链接 → 作为文件（传输时下载链接指向的文件）
+                var isDirectory = attributes.isDirectory
+                var isFile = attributes.isRegularFile
+                var fileSize = attributes.size
+                if (attributes.isSymbolicLink) {
+                    resolveSymbolicLink(path)?.let { resolved ->
+                        isDirectory = Files.isDirectory(resolved)
+                        isFile = Files.isRegularFile(resolved)
+                        fileSize = runCatching { Files.size(resolved) }.getOrDefault(fileSize)
+                    }
+                }
                 return Attributes(
                     name = path.name,
-                    type = Attributes.computeType(attributes.isSymbolicLink, attributes.isDirectory, path.name),
-                    isDirectory = attributes.isDirectory,
-                    isFile = attributes.isRegularFile,
+                    type = Attributes.computeType(attributes.isSymbolicLink, isDirectory, path.name),
+                    isDirectory = isDirectory,
+                    isFile = isFile,
                     isSymbolicLink = attributes.isSymbolicLink,
-                    fileSize = attributes.size,
+                    fileSize = fileSize,
                     permissions = fromSftpPermissions(attributes.permissions),
                     owner = attributes.owner ?: StringUtils.EMPTY,
                     lastModifiedTime = attributes.modifyTime.toMillis()
@@ -887,27 +907,41 @@ internal open class TransportPanel(
             }
         }
 
-        val basicAttributes = runCatching { path.fileAttributesView<BasicFileAttributeView>().readAttributes() }
-            .getOrNull()
+        val basicAttributes = runCatching {
+            // 使用 NOFOLLOW 读取，以便识别符号链接本身（显示为“符号链接”类型）
+            path.fileAttributesView<BasicFileAttributeView>(LinkOption.NOFOLLOW_LINKS).readAttributes()
+        }.getOrNull()
         val fileOwnerAttribute = runCatching { path.fileAttributesView<FileOwnerAttributeView>().owner }
             .getOrNull()
-        val posixFileAttribute = runCatching { path.fileAttributesView<PosixFileAttributeView>().readAttributes() }
-            .getOrNull()
+        val posixFileAttribute = runCatching {
+            path.fileAttributesView<PosixFileAttributeView>(LinkOption.NOFOLLOW_LINKS).readAttributes()
+        }.getOrNull()
 
-        val fileSize = basicAttributes?.size() ?: 0
+        val isSymbolicLink = basicAttributes?.isSymbolicLink ?: false
+        // 符号链接需要解析其指向的类型（跟随链接）：
+        // 目录符号链接 → 作为目录（双击进入），文件符号链接 → 作为文件（传输时下载链接指向的文件）
+        var isDirectory = basicAttributes?.isDirectory ?: false
+        var isFile = basicAttributes?.isRegularFile ?: false
+        var fileSize = basicAttributes?.size() ?: 0
+        if (isSymbolicLink) {
+            resolveSymbolicLink(path)?.let { resolved ->
+                isDirectory = Files.isDirectory(resolved)
+                isFile = Files.isRegularFile(resolved)
+                fileSize = runCatching { Files.size(resolved) }.getOrDefault(fileSize)
+            }
+        }
+
         val permissions = posixFileAttribute?.permissions()
             ?: if (basicAttributes is S3FileAttributes) basicAttributes.permissions
             else emptySet()
         val owner = fileOwnerAttribute?.name ?: StringUtils.EMPTY
         val lastModifiedTime = basicAttributes?.lastModifiedTime()?.toMillis() ?: 0
-        val isDirectory = basicAttributes?.isDirectory ?: false
-        val isSymbolicLink = basicAttributes?.isSymbolicLink ?: false
 
         return Attributes(
             name = StringUtils.defaultIfBlank(path.name, path.pathString),
             type = Attributes.computeType(isSymbolicLink, isDirectory, path.name),
             isDirectory = isDirectory,
-            isFile = basicAttributes?.isRegularFile ?: false,
+            isFile = isFile,
             isSymbolicLink = isSymbolicLink,
             fileSize = fileSize,
             permissions = permissions,

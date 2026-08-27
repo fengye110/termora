@@ -428,11 +428,21 @@ internal fun readAttributes(path: Path): TransportTableModel.Attributes {
     if (path is WithFileAttributes) {
         val attrs = path.attributes
         if (attrs != null) {
+            // 符号链接需要解析其指向的类型（跟随链接）：
+            // 目录符号链接 → 作为目录，文件符号链接 → 作为文件
+            var isDirectory = attrs.isDirectory
+            var isFile = attrs.isRegularFile
+            if (attrs.isSymbolicLink) {
+                resolveSymbolicLink(path)?.let { resolved ->
+                    isDirectory = Files.isDirectory(resolved)
+                    isFile = Files.isRegularFile(resolved)
+                }
+            }
             return TransportTableModel.Attributes(
                 name = path.name,
-                type = TransportTableModel.Attributes.computeType(attrs.isSymbolicLink, attrs.isDirectory, path.name),
-                isDirectory = attrs.isDirectory,
-                isFile = attrs.isRegularFile,
+                type = TransportTableModel.Attributes.computeType(attrs.isSymbolicLink, isDirectory, path.name),
+                isDirectory = isDirectory,
+                isFile = isFile,
                 isSymbolicLink = attrs.isSymbolicLink,
                 fileSize = attrs.size,
                 permissions = fromSftpPermissions(attrs.permissions),

@@ -89,3 +89,24 @@ object PathWalker {
     }
 
 }
+
+/**
+ * 解析符号链接的目标路径（跟随链接）。
+ *
+ * 符号链接的目标可能是相对路径（如 `real-dir` 或 `../foo`），也可能是绝对路径。
+ *
+ * @param path 符号链接路径
+ * @return 链接目标的 [Path]；如果无法解析或读取失败则返回 null
+ */
+internal fun resolveSymbolicLink(path: Path): Path? {
+    return try {
+        val target = Files.readSymbolicLink(path)
+        if (target.isAbsolute) {
+            path.fileSystem.getPath(target.toString())
+        } else {
+            path.resolveSibling(target)
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
