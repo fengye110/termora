@@ -80,6 +80,19 @@ class TerminalPanelKeyAdapter(
             }
         }
 
+        // https://github.com/TermoraDev/termora/issues/52
+        // Windows 下 Ctrl+Tab / Ctrl+Shift+Tab 用于切换标签页(正向/逆向),不发送到终端
+        if (SystemInfo.isWindows && e.keyCode == KeyEvent.VK_TAB) {
+            val modifiersEx = e.modifiersEx
+            val ctrl = modifiersEx and InputEvent.CTRL_DOWN_MASK != 0
+            val alt = modifiersEx and InputEvent.ALT_DOWN_MASK != 0
+            val altGraph = modifiersEx and InputEvent.ALT_GRAPH_DOWN_MASK != 0
+
+            if (ctrl && !alt && !altGraph) {
+                return
+            }
+        }
+
         val encode = terminal.getKeyEncoder().encode(AWTTerminalKeyEvent(e))
         if (encode.isNotEmpty()) {
             writer.write(TerminalWriter.WriteRequest.fromBytes(encode.toByteArray(writer.getCharset())))
@@ -88,10 +101,6 @@ class TerminalPanelKeyAdapter(
             e.consume()
         }
 
-        // https://github.com/TermoraDev/termora/issues/52
-        if (SystemInfo.isWindows && e.keyCode == KeyEvent.VK_TAB && isCtrlPressedOnly(e)) {
-            return
-        }
 
         // https://github.com/TermoraDev/termora/issues/865
         val modifier = terminal.getTerminalModel().getData(DataKey.AltModifier, AltKeyModifier.EightBit)
