@@ -15,29 +15,16 @@ class KeymapImpl(private val menuShortcutKeyMaskEx: Int) : Keymap("Keymap", null
 
     private fun registerShortcuts() {
 
-        // new window
-        addShortcut(
-            NewWindowAction.NEW_WINDOW,
-            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_N, menuShortcutKeyMaskEx))
-        )
-
         // Find Everywhere
         addShortcut(
             FindEverywhereAction.FIND_EVERYWHERE,
             KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_T, menuShortcutKeyMaskEx))
         )
 
-        // Command + L
-        addShortcut(
-            OpenLocalTerminalAction.LOCAL_TERMINAL,
-            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, menuShortcutKeyMaskEx))
-        )
-
-
-        // Command + L
+        // Command + Shift + F
         addShortcut(
             TerminalFindAction.FIND,
-            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F, menuShortcutKeyMaskEx))
+            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F, menuShortcutKeyMaskEx or InputEvent.SHIFT_DOWN_MASK))
         )
 
         // Command + W
@@ -58,10 +45,10 @@ class KeymapImpl(private val menuShortcutKeyMaskEx: Int) : Keymap("Keymap", null
             KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuShortcutKeyMaskEx))
         )
 
-        // Command + -
+        // Command + Shift + -
         addShortcut(
             TerminalZoomOutAction.ZOOM_OUT,
-            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, menuShortcutKeyMaskEx))
+            KeyShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, menuShortcutKeyMaskEx or InputEvent.SHIFT_DOWN_MASK))
         )
 
         // Command + 0
